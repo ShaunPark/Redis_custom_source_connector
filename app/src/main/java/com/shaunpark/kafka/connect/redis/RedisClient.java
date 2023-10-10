@@ -14,9 +14,9 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 
 public class RedisClient {
     private String key;
+    private JedisPool pool;
     private String host;
     private int port;
-    private JedisPool pool;
     private int batchSize;
 
     private static final Logger log = LoggerFactory.getLogger(RedisClient.class);
@@ -35,7 +35,7 @@ public class RedisClient {
         if(pool == null || pool.isClosed()) {
             while(true) {
                 try {
-                    connect();
+                    pool = new JedisPool(host, port);
                     retryCount = 10;
                     break;
                 } catch( JedisConnectionException je) {
