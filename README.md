@@ -6,7 +6,7 @@
 - REDIS가 연결에 실패한 경우, 다음 poll시점에 다시연결하여 처리
 
 ## 설정 값
-[Config Image](./static/config.png?raw=true "Config")
+![Config Image](./static/config.png?raw=true "Config")
 - Poll Interval : poll 주기, 기본값 10초, 최소 10초
 - Redis Server Hostname : redis host 명. connect 클러스터에서 접근 가능한 호스트 명 혹은 아이피. 기본값 'localhost'
 - Redis Server Port Number : redis port 번호. 기본값 6379
