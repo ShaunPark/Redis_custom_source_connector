@@ -61,12 +61,12 @@ public class RedisClient {
             cleanTime = nowMs;
         }
         if( nowMs - cleanTime > 600000  ) { // 10 mins
-            Enumeration<String> keys =  producedMessages.keys();
-            while(keys.hasMoreElements()) {
-                String key = keys.nextElement();
-                long ms = producedMessages.get(key);
+            Enumeration<String> msgKeys =  producedMessages.keys();
+            while(msgKeys.hasMoreElements()) {
+                String msgKey = msgKeys.nextElement();
+                long ms = producedMessages.get(msgKey);
                 if ( nowMs - ms > 3600000 ) {
-                    producedMessages.remove(key);
+                    producedMessages.remove(msgKey);
                 }
             }
         }
@@ -79,7 +79,7 @@ public class RedisClient {
         try (Jedis jedis = pool.getResource()) {
             List<String> list = jedis.zrangeByScore(key, 0, endPosition, 0, batchSize);
             for( String msg : list) {
-                if( producedMessages.contains(msg)) {
+                if( producedMessages.containsKey(msg)) {
                     continue;
                 } else {
                     newData.add(msg);
@@ -87,21 +87,31 @@ public class RedisClient {
                 }
             }
             return newData;
+        } catch(JedisConnectionException ce) {
+            log.error("Error while getData. reconnect on next poll()", ce);
+            return new ArrayList<String>();
         } finally {
             clean();
         }
     }
 
+    private List<String> shouldDeleted = new ArrayList<String>();
     public void delete(String deleteItems) {
         connect();
 
         try (Jedis jedis = pool.getResource()) {
+            for( String item : shouldDeleted) {
+                jedis.zrem(key, deleteItems);
+                shouldDeleted.remove(item);
+            }
 
-            if( producedMessages.contains(deleteItems)) {
+            if( producedMessages.containsKey(deleteItems)) {
                 producedMessages.remove(deleteItems);
                 log.info("commitRecord : delete processed record" + deleteItems);
                 jedis.zrem(key, deleteItems);
             }
+        } catch(JedisConnectionException ce) {
+            log.error("Error while delete.", ce);
         }
     }
 

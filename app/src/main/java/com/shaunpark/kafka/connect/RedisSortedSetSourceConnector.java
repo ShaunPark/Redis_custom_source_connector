@@ -9,6 +9,7 @@ import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Range;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Validator;
+import org.apache.kafka.common.config.ConfigDef.Width;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.slf4j.Logger;
@@ -25,9 +26,9 @@ import java.util.regex.Pattern;
 /**
  * Very simple source connector that works with stdin or a file.
  */
-public class LotteRedisSortedSetSourceConnector extends SourceConnector {
+public class RedisSortedSetSourceConnector extends SourceConnector {
 
-    private static final Logger log = LoggerFactory.getLogger(LotteRedisSortedSetSourceConnector.class);
+    private static final Logger log = LoggerFactory.getLogger(RedisSortedSetSourceConnector.class);
     public static final String TOPIC_CONFIG = "topic";
     public static final String TASK_BATCH_SIZE_CONFIG = "batch.size";
     public static final String REDIS_HOST_CONFIG = "redis.host";
@@ -36,7 +37,7 @@ public class LotteRedisSortedSetSourceConnector extends SourceConnector {
     public static final String POLL_MAX_INTERVAL_MS_CONFIG = "max.poll.interval.ms";
 
     public static final int DEFAULT_TASK_BATCH_SIZE = 2000;
-    public static final int DEFAULT_POLL_INTERVAL = 1000;
+    public static final int DEFAULT_POLL_INTERVAL = 10000;
     public static final String DEFAULT_REDIS_SERVER_HOST = "localhost";
     public static final int DEFAULT_REDIS_SERVER_PORT = 6379;
 
@@ -48,15 +49,15 @@ public class LotteRedisSortedSetSourceConnector extends SourceConnector {
     public RedisClient client;
     private static int orderId = 0;
     private static ConfigKey createConfigKey(String name, Type type, Object defaultValue, Validator validator, String document, String displayName) {
-        return new ConfigKey(name, type, defaultValue, validator,Importance.HIGH, document,  CONFIG_GROUP,  orderId++, null, displayName, null,null, false);
+        return new ConfigKey(name, type, defaultValue, validator,Importance.HIGH, document,  CONFIG_GROUP,  orderId++, Width.NONE, displayName, Collections.emptyList(),null, false);
     }
 
     static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(createConfigKey(POLL_MAX_INTERVAL_MS_CONFIG, 
                 Type.INT, 
                 DEFAULT_POLL_INTERVAL, 
-                Range.atLeast(1000),
-                "Maximun poll interval in milliseconds, If not specified, '1000' will be used. minium value is '1000'",
+                Range.atLeast(10000),
+                "Maximun poll interval in milliseconds, If not specified, '10000' will be used. minium value is '10000'",
                 "Poll Interval"))
         .define(createConfigKey(REDIS_HOST_CONFIG, 
                 Type.STRING, 
@@ -91,17 +92,18 @@ public class LotteRedisSortedSetSourceConnector extends SourceConnector {
             
     @Override
     public String version() {
-        return "0.0.7";
+        return "0.0.10";
     }
 
     @Override
     public void start(Map<String, String> props) {
+        log.info("RedisSortedSetSourceConnector started.");
         this.properties = Collections.unmodifiableMap(new HashMap<>(props));
     }
 
     @Override
     public Class<? extends Task> taskClass() {
-        return LotteRedisSortedSetSourceTask.class;
+        return RedisSortedSetSourceTask.class;
     }
 
     @Override

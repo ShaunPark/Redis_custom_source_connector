@@ -17,11 +17,9 @@ import org.apache.kafka.common.utils.Time;
 
 import com.shaunpark.kafka.connect.redis.RedisClient;
 
-/**
- * FileStreamSourceTask reads from stdin or a file.
- */
-public class LotteRedisSortedSetSourceTask extends SourceTask {
-    private static final Logger log = LoggerFactory.getLogger(LotteRedisSortedSetSourceTask.class);
+
+public class RedisSortedSetSourceTask extends SourceTask {
+    private static final Logger log = LoggerFactory.getLogger(RedisSortedSetSourceTask.class);
     public static final String REDIS_KEY = "REDIS_KEY";
     public  static final String POSITION_FIELD = "position";
     private static final Schema VALUE_SCHEMA = Schema.STRING_SCHEMA;
@@ -35,24 +33,24 @@ public class LotteRedisSortedSetSourceTask extends SourceTask {
     private Long streamOffset;
     private Time time;
     
-    public LotteRedisSortedSetSourceTask() {
+    public RedisSortedSetSourceTask() {
     }
 
     @Override
     public String version() {
-        return new LotteRedisSortedSetSourceConnector().version();
+        return new RedisSortedSetSourceConnector().version();
     }
 
     @Override
     public void start(Map<String, String> props) {
-        AbstractConfig config = new AbstractConfig(LotteRedisSortedSetSourceConnector.CONFIG_DEF, props);
-        String hostName = config.getString(LotteRedisSortedSetSourceConnector.REDIS_HOST_CONFIG);
-        int portNumber = config.getInt(LotteRedisSortedSetSourceConnector.REDIS_PORT_CONFIG);
-        pollInterval = config.getInt(LotteRedisSortedSetSourceConnector.POLL_MAX_INTERVAL_MS_CONFIG);
+        AbstractConfig config = new AbstractConfig(RedisSortedSetSourceConnector.CONFIG_DEF, props);
+        String hostName = config.getString(RedisSortedSetSourceConnector.REDIS_HOST_CONFIG);
+        int portNumber = config.getInt(RedisSortedSetSourceConnector.REDIS_PORT_CONFIG);
+        pollInterval = config.getInt(RedisSortedSetSourceConnector.POLL_MAX_INTERVAL_MS_CONFIG);
 
-        redisKey = config.getString(LotteRedisSortedSetSourceConnector.REDIS_KEY_CONFIG);
-        topic = config.getString(LotteRedisSortedSetSourceConnector.TOPIC_CONFIG);
-        batchSize = config.getInt(LotteRedisSortedSetSourceConnector.TASK_BATCH_SIZE_CONFIG);
+        redisKey = config.getString(RedisSortedSetSourceConnector.REDIS_KEY_CONFIG);
+        topic = config.getString(RedisSortedSetSourceConnector.TOPIC_CONFIG);
+        batchSize = config.getInt(RedisSortedSetSourceConnector.TASK_BATCH_SIZE_CONFIG);
         time = new SystemTime();
 
         client = new RedisClient(hostName, portNumber, batchSize, redisKey);
@@ -69,7 +67,8 @@ public class LotteRedisSortedSetSourceTask extends SourceTask {
         List<String>data = client.getSendData(streamOffset);
 
         List<SourceRecord> records = new ArrayList<SourceRecord>();
-        if( data.size() == 0 ) {
+        log.info("polled records count " + data.size());
+        if( data.size() <= 0 ) {
             time.sleep(pollInterval);
         } else {
             for ( String message : data) {
